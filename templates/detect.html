@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Detect Fake News — SatyaCheck{% endblock %}
+
+{% block content %}
+<section class="page-hero detect-hero">
+  <div class="page-hero-content">
+    <span class="section-eyebrow">AI Analysis Engine</span>
+    <h1>News <span class="accent">Detector</span></h1>
+    <p>Paste any article, headline, or forward below and let the AI decide.</p>
+  </div>
+</section>
+
+<section class="detect-section">
+  <div class="detect-container">
+
+    <!-- Input Panel -->
+    <div class="detect-input-panel glass reveal">
+      <div class="input-header">
+        <i class="fas fa-keyboard"></i>
+        <span>Paste Your News Content</span>
+      </div>
+
+      <textarea
+        id="newsInput"
+        class="news-textarea"
+        placeholder="Paste news article, WhatsApp forward, tweet, or headline here...&#10;&#10;Example: 'SHOCKING: Government secretly planning to ban all social media in India by midnight tonight!'"
+        rows="8"
+        maxlength="5000"
+      ></textarea>
+
+      <div class="input-meta">
+        <span class="char-count"><span id="charCount">0</span> / 5000 characters</span>
+        <div class="input-tips">
+          <span><i class="fas fa-lightbulb"></i> Tip: Include full context for best results</span>
+        </div>
+      </div>
+
+      <div class="detect-actions">
+        <button class="btn-primary btn-analyse" id="analyseBtn" onclick="analyseNews()">
+          <span class="btn-text"><i class="fas fa-magnifying-glass-chart"></i> Analyse News</span>
+          <span class="btn-loading" style="display:none"><i class="fas fa-circle-notch fa-spin"></i> Analysing...</span>
+        </button>
+        <button class="btn-ghost btn-clear" onclick="clearInput()">
+          <i class="fas fa-xmark"></i> Clear
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-wrap" id="progressWrap" style="display:none">
+        <div class="progress-bar" id="progressBar"></div>
+        <span class="progress-label">Running NLP pipeline...</span>
+      </div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="result-panel" id="resultPanel" style="display:none">
+      <div class="result-card glass" id="resultCard">
+        <!-- Verdict -->
+        <div class="verdict-section" id="verdictSection">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div class="verdict-label" id="verdictLabel"></div>
+          <div class="verdict-subtitle" id="verdictSubtitle"></div>
+        </div>
+
+        <!-- Confidence Gauge -->
+        <div class="confidence-section">
+          <h4><i class="fas fa-gauge-high"></i> Confidence Score</h4>
+          <div class="gauge-wrap">
+            <div class="gauge-bar">
+              <div class="gauge-fill" id="gaugeFill"></div>
+            </div>
+            <span class="gauge-value" id="gaugeValue">0%</span>
+          </div>
+          <div class="prob-split">
+            <div class="prob-item">
+              <span class="prob-dot real-dot"></span>
+              <span>Real: <strong id="realProb">—</strong></span>
+            </div>
+            <div class="prob-item">
+              <span class="prob-dot fake-dot"></span>
+              <span>Fake: <strong id="fakeProb">—</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signals Detected -->
+        <div class="signals-section" id="signalsSection">
+          <h4><i class="fas fa-triangle-exclamation"></i> Signals Detected</h4>
+          <ul class="signals-list" id="signalsList"></ul>
+        </div>
+
+        <!-- Article Stats -->
+        <div class="article-stats">
+          <div class="a-stat">
+            <i class="fas fa-font"></i>
+            <span id="wordCount">—</span>
+            <span>Words</span>
+          </div>
+          <div class="a-stat">
+            <i class="fas fa-clock"></i>
+            <span id="readTime">—</span>
+            <span>Read Time</span>
+          </div>
+          <div class="a-stat">
+            <i class="fas fa-robot"></i>
+            <span>TF-IDF LR</span>
+            <span>Model</span>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn-ghost btn-sm" onclick="clearInput()">
+            <i class="fas fa-redo"></i> Analyse Another
+          </button>
+          <button class="btn-primary btn-sm" onclick="copyResult()">
+            <i class="fas fa-copy"></i> Copy Result
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Example News Cards -->
+  <div class="examples-section">
+    <div class="section-container">
+      <h3 class="examples-title reveal"><i class="fas fa-flask"></i> Try These Examples</h3>
+      <div class="examples-grid">
+        <div class="example-card glass reveal fake-example" data-delay="0"
+             onclick="loadExample(this)">
+          <span class="ex-tag fake-tag"><i class="fas fa-circle-xmark"></i> Fake</span>
+          <p>"SHOCKING: Government secretly planning to replace all Indian currency with digital tokens by midnight tonight!"</p>
+          <span class="ex-cta">Click to analyse <i class="fas fa-arrow-right"></i></span>
+        </div>
+        <div class="example-card glass reveal real-example" data-delay="150"
+             onclick="loadExample(this)">
+          <span class="ex-tag real-tag"><i class="fas fa-circle-check"></i> Real</span>
+          <p>"The Reserve Bank of India kept interest rates unchanged at 6.5 percent amid concerns about inflation and global economic uncertainty."</p>
+          <span class="ex-cta">Click to analyse <i class="fas fa-arrow-right"></i></span>
+        </div>
+        <div class="example-card glass reveal fake-example" data-delay="300"
+             onclick="loadExample(this)">
+          <span class="ex-tag fake-tag"><i class="fas fa-circle-xmark"></i> Fake</span>
+          <p>"VIRAL: NASA confirms alien base discovered on moon directly above India, government hiding truth from public for decades!"</p>
+          <span class="ex-cta">Click to analyse <i class="fas fa-arrow-right"></i></span>
+        </div>
+        <div class="example-card glass reveal real-example" data-delay="450"
+             onclick="loadExample(this)">
+          <span class="ex-tag real-tag"><i class="fas fa-circle-check"></i> Real</span>
+          <p>"ISRO successfully launched the PSLV-C57 mission carrying the Aditya-L1 solar observation spacecraft from Sriharikota."</p>
+          <span class="ex-cta">Click to analyse <i class="fas fa-arrow-right"></i></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/detect.js') }}"></script>
+{% endblock %}
